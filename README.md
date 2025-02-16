@@ -37,7 +37,7 @@ Before you begin, ensure you have installed:
 
 1. Clone the repository:
 ```bash
-git clone <the-repository-url>
+git clone https://github.com/khanheric2003/gpt-portfolio
 cd gpt-portfolio
 ```
 
