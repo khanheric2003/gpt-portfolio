@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { MessageCircle, Send } from 'lucide-react';
+import { MessageCircle, Send, Moon, Sun  } from 'lucide-react';
 import { 
   Topic, 
   answers, 
@@ -18,9 +18,14 @@ interface TypeWriterProps {
 
 }
 
+interface LoadingDotsProps {
+  isDarkMode: boolean;
+}
+
 interface MessageProps {
   message: Message;
   isLatest: boolean;
+  isDarkMode: boolean;
 }
 
 interface IntroAnimationProps {
@@ -52,24 +57,32 @@ const TypeWriter: React.FC<TypeWriterProps> = ({
 };
 
 // Adjusting the speed of the load animation here
-const LoadingDots: React.FC = () => {
+const LoadingDots: React.FC<LoadingDotsProps> = ({ isDarkMode }) => {
   return (
-    <div className="flex space-x-2 p-4 bg-gray-700 rounded-lg w-20">
-      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '100ms' }} />
-      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '200ms' }} />
+    <div className={`flex space-x-2 p-4 rounded-lg w-20 ${
+      isDarkMode ? 'bg-gray-700' : 'bg-gray-200'
+    }`}>
+      <div className={`w-2 h-2 rounded-full animate-bounce ${
+        isDarkMode ? 'bg-gray-400' : 'bg-gray-500'
+      }`} style={{ animationDelay: '0ms' }} />
+      <div className={`w-2 h-2 rounded-full animate-bounce ${
+        isDarkMode ? 'bg-gray-400' : 'bg-gray-500'
+      }`} style={{ animationDelay: '100ms' }} />
+      <div className={`w-2 h-2 rounded-full animate-bounce ${
+        isDarkMode ? 'bg-gray-400' : 'bg-gray-500'
+      }`} style={{ animationDelay: '200ms' }} />
     </div>
   );
 };
 
-const Message: React.FC<MessageProps> = ({ message, isLatest }) => {
+const Message: React.FC<MessageProps> = ({ message, isLatest, isDarkMode }) => {
   const [isTyping, setIsTyping] = useState(message.type === 'assistant' && isLatest);
 
   return (
     <div className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}>
       <div className="flex items-start gap-3 max-w-xl">
         {message.type === 'assistant' && (
-            <img
+          <img
             src="profile.png"
             alt="Profile"
             className="w-8 h-8 rounded-full flex-shrink-0 object-cover"
@@ -79,14 +92,16 @@ const Message: React.FC<MessageProps> = ({ message, isLatest }) => {
           className={`rounded-lg p-4 ${
             message.type === 'user'
               ? 'bg-blue-600 text-white'
-              : 'bg-gray-700 text-gray-100'
+              : isDarkMode 
+                ? 'bg-gray-700 text-gray-100'
+                : 'bg-gray-200 text-gray-800'
           }`}
         >
           {message.type === 'assistant' && isTyping ? (
             <TypeWriter 
               text={message.content} 
               onComplete={() => setIsTyping(false)}
-              speed={10}  // Adjust the speed of typing here
+              speed={10}
             />
           ) : (
             message.content
@@ -115,21 +130,21 @@ const IntroAnimation: React.FC<IntroAnimationProps> = ({ onComplete }) => {
   }, [step, onComplete]);
 
   return (
-    <div className="fixed inset-0 bg-gray-800 flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-gray-900 flex items-center justify-center z-50">
       <div className="text-center">
         {step >= 0 && (
-          <h1 className="text-4xl font-bold text-white mb-4 animate-fade-in">
+          <h1 className="text-4xl font-bold text-gray-100 mb-4 animate-fade-in">
             Welcome to Kan's Portfolio
           </h1>
         )}
         {step >= 1 && (
-          <p className="text-xl text-gray-300 mb-8 animate-fade-in">
+          <p className="text-xl text-gray-400 mb-8 animate-fade-in">
             Let's have a conversation
           </p>
         )}
         {step >= 2 && (
           <div className="animate-fade-in">
-            <LoadingDots />
+            <LoadingDots isDarkMode={true} />
           </div>
         )}
       </div>
@@ -183,16 +198,22 @@ const App: React.FC = () => {
   const [questionQueue, setQuestionQueue] = useState<string[]>(defaultQuestions);
   const [usedQuestions, setUsedQuestions] = useState<string[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [isDarkMode, setIsDarkMode] = useState(true);
   // Get the first 3 available questions
   const currentSuggestions = questionQueue.slice(0, 3);
   
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
-  
+  // Bottom scrolling
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+  // Apply theme class to html element
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', isDarkMode);
+  }, [isDarkMode]);
+
   
   const addResponse = async (question: string, answer: string) => {
     setMessages(prev => [...prev, { type: 'user', content: question }]);
@@ -258,34 +279,79 @@ const App: React.FC = () => {
       {showIntro ? (
         <IntroAnimation onComplete={() => setShowIntro(false)} />
       ) : (
-        <div className="flex h-screen bg-gray-800 animate-fade-in">
+        <div className={`flex h-screen ${
+          isDarkMode ? 'bg-gray-800' : 'bg-gray-100'
+        } animate-fade-in`}>
           {/* Left Sidebar */}
-          <div className="w-1/4 bg-gray-900 p-6">
+          <div className={`w-1/4 ${
+            isDarkMode ? 'bg-gray-900' : 'bg-white'
+          } p-6`}>
+            {/* Theme Toggle */}
+            <div className="flex justify-end mb-4">
+              <button
+                onClick={() => setIsDarkMode(!isDarkMode)}
+                className={`p-2 rounded-lg transition-colors duration-200 ${
+                  isDarkMode 
+                    ? 'bg-gray-700 hover:bg-gray-600 text-gray-200' 
+                    : 'bg-gray-200 hover:bg-gray-300 text-gray-800'
+                }`}
+              >
+                {isDarkMode ? (
+                  <Sun className="w-5 h-5" />
+                ) : (
+                  <Moon className="w-5 h-5" />
+                )}
+              </button>
+            </div>
+
             <div className="flex flex-col items-center">
               <img
                 src="profile.png"
                 alt="Profile"
                 className="rounded-full w-32 h-32 mb-4 animate-scale-in"
               />
-              <h2 className="text-xl font-bold mb-2 text-white animate-fade-in">Kan</h2>
-              <p className="text-gray-400 text-sm animate-fade-in">Founder DataScienceWorld.Kan</p>
+              <h2 className={`text-xl font-bold mb-2 ${
+                isDarkMode ? 'text-white' : 'text-gray-800'
+              } animate-fade-in`}>
+                Kan
+              </h2>
+              <p className={`${
+                isDarkMode ? 'text-gray-400' : 'text-gray-900'
+              } text-sm animate-fade-in`}>
+                Founder DataScienceWorld.Kan
+              </p>
             </div>
+
             <div className="mt-6 animate-fade-in">
-              <h3 className="text-sm font-semibold text-gray-300 mb-2">About me</h3>
-              <p className="text-sm text-gray-400">
-              Neque porro quisquam est qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit...
+              <h3 className={`text-sm font-semibold mb-2 ${
+                isDarkMode ? 'text-gray-300' : 'text-gray-900'
+              }`}>
+                About me
+              </h3>
+              <p className={`text-sm ${
+                isDarkMode ? 'text-gray-400' : 'text-gray-600'
+              }`}>
+                Neque porro quisquam est qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit...
               </p>
             </div>
 
             {/* Contact Information */}
             <div className="mt-6 animate-fade-in">
-              <h3 className="text-sm font-semibold text-gray-300 mb-3">Connect with me</h3>
+              <h3 className={`text-sm font-semibold mb-3 ${
+                isDarkMode ? 'text-gray-300' : 'text-gray-700'
+              }`}>
+                Connect with me
+              </h3>
               <div className="space-y-2">
                 <a 
                   href="https://www.linkedin.com/in/khanh-bui020403/" 
                   target="_blank" 
                   rel="noopener noreferrer"
-                  className="flex items-center gap-2 text-sm text-gray-400 hover:text-gray-300"
+                  className={`flex items-center gap-2 text-sm ${
+                    isDarkMode 
+                      ? 'text-gray-400 hover:text-gray-300' 
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
                 >
                   <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/>
@@ -296,7 +362,11 @@ const App: React.FC = () => {
                   href="https://github.com/khanheric2003" 
                   target="_blank" 
                   rel="noopener noreferrer"
-                  className="flex items-center gap-2 text-sm text-gray-400 hover:text-gray-300"
+                  className={`flex items-center gap-2 text-sm ${
+                    isDarkMode 
+                      ? 'text-gray-400 hover:text-gray-300' 
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
                 >
                   <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
@@ -307,7 +377,11 @@ const App: React.FC = () => {
                   href="https://www.youtube.com/@depressionkid8859" 
                   target="_blank" 
                   rel="noopener noreferrer"
-                  className="flex items-center gap-2 text-sm text-gray-400 hover:text-gray-300"
+                  className={`flex items-center gap-2 text-sm ${
+                    isDarkMode 
+                      ? 'text-gray-400 hover:text-gray-300' 
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
                 >
                   <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
@@ -327,6 +401,7 @@ const App: React.FC = () => {
                     key={index} 
                     message={message} 
                     isLatest={index === messages.length - 1}
+                    isDarkMode={isDarkMode}
                   />
                 ))}
                 <div ref={messagesEndRef} />
@@ -339,30 +414,38 @@ const App: React.FC = () => {
                         alt="Profile"
                         className="w-8 h-8 rounded-full flex-shrink-0 object-cover"
                       />
-                      <LoadingDots />
+                      <LoadingDots isDarkMode={isDarkMode} />
                     </div>
                   </div>
                 )}
 
-          {!isLoading && messages[messages.length - 1]?.type === 'assistant' && (
-              <div className="flex flex-wrap gap-2 mt-4 animate-fade-in">
-                {currentSuggestions.map((question) => (
-                  <button
-                    key={question}
-                    onClick={() => handleQuestionClick(question)}
-                    className="bg-gray-700 hover:bg-gray-600 rounded-lg px-4 py-2 text-sm text-gray-200 flex items-center gap-2 border border-gray-600"
-                  >
-                    <MessageCircle className="w-4 h-4" />
-                    {question}
-                  </button>
-                ))}
-              </div>
-              )}
+                {!isLoading && messages[messages.length - 1]?.type === 'assistant' && (
+                  <div className="flex flex-wrap gap-2 mt-4 animate-fade-in">
+                    {currentSuggestions.map((question) => (
+                      <button
+                        key={question}
+                        onClick={() => handleQuestionClick(question)}
+                        className={`rounded-lg px-4 py-2 text-sm flex items-center gap-2 border ${
+                          isDarkMode 
+                            ? 'bg-gray-700 hover:bg-gray-600 text-gray-200 border-gray-600'
+                            : 'bg-gray-200 hover:bg-gray-300 text-gray-700 border-gray-300'
+                        }`}
+                      >
+                        <MessageCircle className="w-4 h-4" />
+                        {question}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
 
             {/* Input Area */}
-            <div className="absolute bottom-0 left-0 right-0 bg-gray-800 border-t border-gray-700">
+            <div className={`absolute bottom-0 left-0 right-0 border-t ${
+              isDarkMode 
+                ? 'bg-gray-800 border-gray-700'
+                : 'bg-gray-100 border-gray-300'
+            }`}>
               <div className="max-w-3xl mx-auto p-6">
                 <form onSubmit={handleSubmit} className="relative">
                   <input
@@ -370,11 +453,19 @@ const App: React.FC = () => {
                     value={inputMessage}
                     onChange={(e) => setInputMessage(e.target.value)}
                     placeholder="Send a message..."
-                    className="w-full bg-gray-700 border border-gray-600 rounded-lg py-3 px-4 pr-12 text-gray-100 placeholder-gray-400 focus:outline-none focus:border-gray-500"
+                    className={`w-full rounded-lg py-3 px-4 pr-12 ${
+                      isDarkMode 
+                        ? 'bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-400'
+                        : 'bg-white border-gray-300 text-gray-800 placeholder-gray-500'
+                    } focus:outline-none focus:border-blue-500`}
                   />
                   <button
                     type="submit"
-                    className="absolute right-3 top-3 text-gray-400 hover:text-gray-300"
+                    className={`absolute right-3 top-3 ${
+                      isDarkMode 
+                        ? 'text-gray-400 hover:text-gray-300'
+                        : 'text-gray-600 hover:text-gray-800'
+                    }`}
                   >
                     <Send className="w-5 h-5" />
                   </button>
